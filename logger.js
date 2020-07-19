@@ -43,10 +43,10 @@ const logEvent = e => {
 const toIndent = ($stack, $level) =>
   chalk.gray(`[${$stack.length.toString().padStart(2)}] `.concat(' '.repeat($level * 3)))
 
-const invoked = (callback, data, { $stack, $level, $activity }) => {
+const invoked = (callback, data, { $stack, $level, $scope }) => {
   const indent = toIndent($stack, $level)
   const header = callback.name
-    ? indent.concat(chalk.yellow.dim($activity.$name.concat($activity.$count > 1 ? `:${$activity.$count} {` : ' {')))
+    ? indent.concat(chalk.yellow.dim($scope.$name.concat($scope.$count > 1 ? `:${$scope.$count} {` : ' {')))
     : indent.concat(chalk.blue('...async {'))
 
   if (Array.isArray(data)) console.log(header.concat(chalk.grey(' // '.concat(toArray(data)))))

@@ -48,10 +48,10 @@ function gotToThePhone({ name }) {
   ]
 }
 
-const root = ({ $activities, name }) => {
+const root = ({ $actions, name }) => {
   return [
-    $activities.authenticate,
-    function theEnd({ authenticate, verifyPhone, canComeToThePhone }) {
+    $actions.authenticate,
+    function root({ authenticate, verifyPhone, canComeToThePhone }) {
       const greet = { say: `Hello ${name}. How are you today?`, authenticated: true }
 
       if (authenticate.answer === 'yes') return greet
@@ -67,7 +67,7 @@ const root = ({ $activities, name }) => {
 const play = events => {
   const options = {
     params: { name: 'John Doe' },
-    activities: { authenticate, verifyPhone, canComeToThePhone, gotToThePhone },
+    actions: { authenticate, verifyPhone, canComeToThePhone, gotToThePhone },
     invoked,
     shifted
   }
@@ -96,8 +96,8 @@ describe('simple test', () => {
     ]
     const $ = play(events)
     $.authenticate.answer.should.equal('yes')
-    $.theEnd.authenticated.should.equal(true)
-    $.theEnd.say.should.equal('Hello John Doe. How are you today?')
+    $.root.authenticated.should.equal(true)
+    $.root.say.should.equal('Hello John Doe. How are you today?')
   })
 
   it('should verify phone', async () => {
@@ -116,8 +116,8 @@ describe('simple test', () => {
     $.canComeToThePhone.answer.should.equal('yes')
     $.gotToThePhone.answer.should.equal('here')
     $.gotToThePhone.$count.should.equal(2)
-    $.theEnd.authenticated.should.equal(true)
-    $.theEnd.say.should.equal('Hello John Doe. How are you today?')
+    $.root.authenticated.should.equal(true)
+    $.root.say.should.equal('Hello John Doe. How are you today?')
   })
 
   it('should leave message when not available', async () => {
@@ -130,7 +130,7 @@ describe('simple test', () => {
     $.authenticate.answer.should.equal('no')
     $.verifyPhone.answer.should.equal('yes')
     $.canComeToThePhone.answer.should.equal('no')
-    $.theEnd.say.should.equal('Hi. Please tell John Doe we will be calling back soon.')
+    $.root.say.should.equal('Hi. Please tell John Doe we will be calling back soon.')
   })
 
   it('should apologize', async () => {
@@ -142,6 +142,6 @@ describe('simple test', () => {
     const $ = play(events)
     $.authenticate.answer.should.equal('no')
     $.verifyPhone.answer.should.equal('no')
-    $.theEnd.say.should.equal("I'm sorry for the inconvenience.")
+    $.root.say.should.equal("I'm sorry for the inconvenience.")
   })
 })

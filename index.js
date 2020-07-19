@@ -3,17 +3,17 @@
  * Copyright(c) 2020 rotorsoft@outlook.com
  * MIT Licensed
  */
-module.exports = ({ params = {}, activities, invoked = () => {}, shifted = () => {} }) => {
-  if (typeof activities !== 'object') throw Error('activities must be an object')
-  const $ = { ...params, $activities: activities, $stack: [], $level: 0 }
-  $.$activity = $
+module.exports = ({ actions, params = {}, invoked = () => {}, shifted = () => {} }) => {
+  if (typeof actions !== 'object') throw Error('actions must be an object')
+  const $ = { ...params, $actions: actions, $stack: [], $level: 0 }
+  $.$scope = $
 
   const invoke = callback => {
     $.$yield = null
-    const any = callback({ ...$, ...$.$activity })
+    const any = callback({ ...$, ...$.$scope })
     invoked(callback, any, $)
     $.$level++
-    $.$stack.unshift($.$activity.$name)
+    $.$stack.unshift($.$scope.$name)
 
     if (Array.isArray(any)) {
       $.$stack.unshift(...any)
@@ -23,7 +23,7 @@ module.exports = ({ params = {}, activities, invoked = () => {}, shifted = () =>
   }
 
   const next = any => {
-    if (typeof any === 'object') Object.assign($.$activity, any)
+    if (typeof any === 'object') Object.assign($.$scope, any)
     if ($.$yield) return invoke($.$yield)
     if (typeof any === 'function') {
       if (!any.name) {
@@ -31,14 +31,14 @@ module.exports = ({ params = {}, activities, invoked = () => {}, shifted = () =>
         $.$yield = any
         return $.$stack.length ? $ : invoke(any)
       }
-      $.$activity = $[any.name] = $[any.name] || { $name: any.name, $count: 0 }
-      $.$activity.$count++
+      $.$scope = $[any.name] = $[any.name] || { $name: any.name, $count: 0 }
+      $.$scope.$count++
       return invoke(any)
     }
 
     if (!(any = $.$stack.shift())) return $
     if (typeof any === 'string') {
-      $.$activity = $[any]
+      $.$scope = $[any]
       $.$level--
     }
     shifted(any, $)

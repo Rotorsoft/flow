@@ -1,12 +1,9 @@
 {
   "name": "@rotorsoft/flow",
   "version": "1.0.0",
-  "description": "A minimal async state machine",
+  "description": "A minimalistic async state machine",
   "main": "index.js",
-  "author": {
-    "name": "rotorsoft",
-    "email": "rotorsoft@outlook.com"
-  },
+  "author": "rotorsoft <rotorsoft@outlook.com>",
   "license": "MIT",
   "engines": {
     "node": ">=10.0.0"
@@ -39,5 +36,6 @@
   "bugs": {
     "url": "https://github.com/rotorsoft/flow/issues"
   },
-  "homepage": "https://github.com/rotorsoft/flow#readme"
+  "homepage": "https://github.com/rotorsoft/flow#readme",
+  "dependencies": {}
 }
