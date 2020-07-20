@@ -3,6 +3,8 @@ chai.should()
 
 const flow = require('../index')
 const { invoked, shifted, yielding, logEvent } = require('../logger')
+const root = require('./root')
+const anonymous = require('./anonymous')
 
 function authenticate({ name }) {
   return [
@@ -47,23 +49,7 @@ function gotToThePhone({ name }) {
   ]
 }
 
-const root = ({ $actions, name }) => {
-  return [
-    $actions.authenticate,
-    function root({ authenticate, verifyPhone, canComeToThePhone }) {
-      const greet = { say: `Hello ${name}. How are you today?`, authenticated: true }
-
-      if (authenticate.answer === 'yes') return greet
-      if (verifyPhone && verifyPhone.answer === 'yes') {
-        if (canComeToThePhone && canComeToThePhone.answer && canComeToThePhone.answer !== 'no') return greet
-        return { say: `Hi. Please tell ${name} we will be calling back soon.` }
-      }
-      return { say: "I'm sorry for the inconvenience." }
-    }
-  ]
-}
-
-const play = events => {
+const play = (events, theroot = root) => {
   const options = {
     params: { name: 'John Doe' },
     actions: { authenticate, verifyPhone, canComeToThePhone, gotToThePhone },
@@ -72,7 +58,7 @@ const play = events => {
   }
 
   const f = flow(options)
-  let state = f(root) // start
+  let state = f(theroot) // start
   yielding(state)
   for (const e of events) {
     logEvent(e)
@@ -142,5 +128,23 @@ describe('simple test', () => {
     $.authenticate.answer.should.equal('no')
     $.verifyPhone.answer.should.equal('no')
     $.root.say.should.equal("I'm sorry for the inconvenience.")
+  })
+})
+
+describe('anonymous root tests', () => {
+  it('should authenticate', async () => {
+    const events = [
+      { answer: 'whatever' }, // authenticate
+      { answer: 'yes' }, // authenticate
+      { number: 'abc' },
+      { number: '1' },
+      { number: '2' },
+      { number: 'invalid' },
+      { number: '3' }
+    ]
+    const $ = play(events, anonymous)
+    $.authenticate.answer.should.equal('yes')
+    $.authenticated.should.equal(true)
+    $.say.should.equal('Hello John Doe. How are you today?')
   })
 })

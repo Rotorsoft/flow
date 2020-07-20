@@ -5,22 +5,29 @@
  */
 module.exports = ({ actions, params = {}, invoked = () => {}, shifted = () => {} }) => {
   if (typeof actions !== 'object') throw Error('actions must be an object')
-  const $ = { ...params, $actions: actions, $name: '$root', $level: 0, $stack: [] }
+  const $ = { ...params, $actions: actions, $name: '$root', $recur: 0, $level: 0, $stack: [] }
   $.$scope = $
 
   const invoke = callback => {
-    $.$yield = null
-    if (callback.name) {
-      if ($.$scope.$name != callback.name) {
-        $.$scope = $[callback.name] = $[callback.name] || { $name: callback.name }
+    const name = callback.name || ($.$stack.length ? '' : '$root')
+    if (name) {
+      if ($.$scope.$name != name) {
+        $.$scope = $[name] = $[name] || { $name: name }
         $.$scope.$recur = 1
       } else $.$scope.$recur++
-      $.$stack.unshift({ $scope: $.$scope, $root: $.$stack.length === 0 })
+    } else if (callback !== $.$yield) {
+      $.$yield = callback
+      return { ...$ }
     }
+    $.$yield = null
+
     const any = callback({ ...$, ...$.$scope })
-    invoked(callback, any, $)
+    invoked(name, any, $)
     if (Array.isArray(any)) {
-      $.$level++
+      if (name) {
+        $.$level++
+        $.$stack.unshift({ $scope: $.$scope })
+      }
       $.$stack.unshift(...any.map(value => ({ $scope: $.$scope, $any: value })))
       return shift()
     }
@@ -29,7 +36,7 @@ module.exports = ({ actions, params = {}, invoked = () => {}, shifted = () => {}
 
   const shift = () => {
     const frame = $.$stack.shift()
-    if (!frame || frame.$root) return { ...$ }
+    if (!frame) return { ...$ }
     if (!frame.$any) $.$level--
     $.$scope = frame.$scope
     shifted(frame, $)
@@ -37,15 +44,9 @@ module.exports = ({ actions, params = {}, invoked = () => {}, shifted = () => {}
   }
 
   const next = any => {
+    if (typeof any === 'function') return invoke(any)
     if (typeof any === 'object') Object.assign($.$scope, any)
     if ($.$yield) return invoke($.$yield)
-    if (typeof any === 'function') {
-      if (!any.name && $.$stack.length) {
-        $.$yield = any
-        return { ...$ }
-      }
-      return invoke(any)
-    }
     return shift()
   }
 

@@ -110,45 +110,39 @@ npm test
 The provided tests are self explanatory and should log a trace like this:
 
 ```javascript
-√ should authenticate (43ms)
-[ 1] root() { // [authenticate({name}), root({authenticate,verifyPhone,canComeToThePhone})]
+    √ should authenticate (60ms)
+[ 0] root() { // [authenticate({name}), root({authenticate,verifyPhone,canComeToThePhone})]
 [ 2]    < authenticate({name})
-[ 3]    authenticate() { // [{"ask":"Am I speakin...}, ({answer,$recur})]
+[ 2]    authenticate() { // [{"ask":"Am I speakin...}, ({answer,$recur})]
 [ 4]       < {"ask":"Am I speaking with John Doe?"}
 [ 3]       < ({answer,$recur})
-[ 3]       ... ({"answer":"no"}) {
+[ 3]       > {"answer":"no"}
 [ 3]          ⏎ verifyPhone({name})
-[ 3]       }
-[ 4]       verifyPhone() { // [{"ask":"Is this the ...}, ({answer,$recur})]
+[ 3]       verifyPhone() { // [{"ask":"Is this the ...}, ({answer,$recur})]
 [ 5]          < {"ask":"Is this the correct number for John Doe?"}
 [ 4]          < ({answer,$recur})
-[ 4]          ... ({"answer":"yes"}) {
+[ 4]          > {"answer":"yes"}
 [ 4]             ⏎ canComeToThePhone({name})
-[ 4]          }
-[ 5]          canComeToThePhone() { // [{"ask":"Ok, can John...}, ({answer,$recur})]
+[ 4]          canComeToThePhone() { // [{"ask":"Ok, can John...}, ({answer,$recur})]
 [ 6]             < {"ask":"Ok, can John Doe come to the phone?"}
 [ 5]             < ({answer,$recur})
-[ 5]             ... ({"answer":"yes"}) {
+[ 5]             > {"answer":"yes"}
 [ 5]                ⏎ gotToThePhone({name})
-[ 5]             }
-[ 6]             gotToThePhone() { // [{"say":"Please say s...}, ({answer,$recur})]
+[ 5]             gotToThePhone() { // [{"say":"Please say s...}, ({answer,$recur})]
 [ 7]                < {"say":"Please say something when John Doe gets to the phone."}
 [ 6]                < ({answer,$recur})
-[ 6]                ... ({}) {
+[ 6]                > {}
 [ 6]                   ⏎ gotToThePhone({name})
-[ 6]                }
-[ 7]                gotToThePhone:2() { // [{"say":"Please say s...}, ({answer,$recur})]
+[ 6]                gotToThePhone:2() { // [{"say":"Please say s...}, ({answer,$recur})]
 [ 8]                   < {"say":"Please say something when John Doe gets to the phone."}
 [ 7]                   < ({answer,$recur})
-[ 7]                   ... ({"answer":"here"}) {
+[ 7]                   > {"answer":"here"}
 [ 7]                      ⏎ authenticate({name})
-[ 7]                   }
-[ 8]                   authenticate() { // [{"ask":"Am I speakin...}, ({answer,$recur})]
+[ 7]                   authenticate() { // [{"ask":"Am I speakin...}, ({answer,$recur})]
 [ 9]                      < {"ask":"Am I speaking with John Doe?"}
 [ 8]                      < ({answer,$recur})
-[ 8]                      ... ({"answer":"yes"}) {
+[ 8]                      > {"answer":"yes"}
 [ 8]                         ⏎
-[ 8]                      }
 [ 7]                   } // authenticate
 [ 6]                } // gotToThePhone
 [ 5]             } // gotToThePhone
@@ -156,10 +150,10 @@ The provided tests are self explanatory and should log a trace like this:
 [ 3]       } // verifyPhone
 [ 2]    } // authenticate
 [ 1]    < root({authenticate,verifyPhone,canComeToThePhone})
-[ 2]    root:2() {
-[ 2]       ⏎ {"say":"Hello John Doe. How are you today?","authenticated":true}
-[ 2]    } // root
-[ 1] } // root
+[ 1]    root:2() {
+[ 1]       ⏎ {"say":"Hello John Doe. How are you today?","authenticated":true}
+[ 1]    } // root
+[ 0] } // root
 
 ===
 {
@@ -171,6 +165,7 @@ The provided tests are self explanatory and should log a trace like this:
     gotToThePhone: [Function: gotToThePhone]
   },
   '$name': '$root',
+  '$recur': 0,
   '$level': 0,
   '$stack': [],
   '$scope': {
@@ -179,13 +174,13 @@ The provided tests are self explanatory and should log a trace like this:
     say: 'Hello John Doe. How are you today?',
     authenticated: true
   },
-  '$yield': null,
   root: {
     '$name': 'root',
     '$recur': 2,
     say: 'Hello John Doe. How are you today?',
     authenticated: true
   },
+  '$yield': null,
   authenticate: {
     '$name': 'authenticate',
     '$recur': 1,

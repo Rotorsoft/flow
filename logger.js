@@ -30,24 +30,24 @@ const toAny = (any, { max = 200, color = true } = {}) => {
   else return typeof any === 'function' ? toPrototype(any) : toObject(any, max)
 }
 
-const YIELD = chalk.yellow('... (')
+const YIELD = chalk.red.bold('> ')
 const yielding = ({ $stack, $level }) => {
   const indent = toIndent($stack, $level)
   process.stdout.write(indent.concat(YIELD))
 }
 
 const logEvent = e => {
-  process.stdout.write(chalk.green(JSON.stringify(e)))
+  process.stdout.write(chalk.red(JSON.stringify(e)))
 }
 
 const toIndent = ($stack, $level) =>
   chalk.gray(`[${$stack.length.toString().padStart(2)}] `.concat(' '.repeat($level * 3)))
 
-const invoked = (callback, any, { $stack, $level, $scope }) => {
+const invoked = (name, any, { $stack, $level, $scope }) => {
   const indent = toIndent($stack, $level)
-  const header = callback.name
-    ? indent.concat(chalk.yellow(callback.name.concat($scope.$recur > 1 ? `:${$scope.$recur}() {` : '() {')))
-    : chalk.yellow(') {')
+  const header = name
+    ? chalk.yellow(indent.concat(name.concat($scope.$recur > 1 ? `:${$scope.$recur}() {` : '() {')))
+    : ''
 
   if (Array.isArray(any)) {
     // action returned array to be pushed in frames
@@ -56,8 +56,7 @@ const invoked = (callback, any, { $stack, $level, $scope }) => {
     // action returned object or another action
     console.log(header)
     console.log(indent.concat(chalk.cyan('   \u23ce ').concat(toAny(any))))
-    if (callback.name) console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat(callback.name))))
-    else console.log(indent.concat(chalk.yellow('} ')))
+    if (name) console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat(name))))
   }
 }
 
