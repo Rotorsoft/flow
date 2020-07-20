@@ -23,44 +23,52 @@ const toAny = (any, { max = 200, color = true } = {}) => {
   if (Array.isArray(any)) return toArray(any)
   if (color)
     return typeof any === 'function'
-      ? chalk.blue(toPrototype(any))
-      : typeof any === 'string'
-      ? chalk.cyan(any)
-      : chalk.green.dim(toObject(any, max))
-  else return typeof any === 'function' ? toPrototype(any) : typeof any === 'string' ? any : toObject(any, max)
+      ? any.name
+        ? chalk.gray(toPrototype(any))
+        : chalk.gray(toPrototype(any))
+      : chalk.green(toObject(any, max))
+  else return typeof any === 'function' ? toPrototype(any) : toObject(any, max)
 }
 
-const YIELD = chalk.blue('await... ')
+const YIELD = chalk.yellow('... (')
 const yielding = ({ $stack, $level }) => {
   const indent = toIndent($stack, $level)
   process.stdout.write(indent.concat(YIELD))
 }
 
 const logEvent = e => {
-  console.log(chalk.green.bold(JSON.stringify(e)))
+  process.stdout.write(chalk.green(JSON.stringify(e)))
 }
 
 const toIndent = ($stack, $level) =>
   chalk.gray(`[${$stack.length.toString().padStart(2)}] `.concat(' '.repeat($level * 3)))
 
-const invoked = (callback, data, { $stack, $level, $scope }) => {
+const invoked = (callback, any, { $stack, $level, $scope }) => {
   const indent = toIndent($stack, $level)
   const header = callback.name
-    ? indent.concat(chalk.yellow.dim($scope.$name.concat($scope.$count > 1 ? `:${$scope.$count} {` : ' {')))
-    : indent.concat(chalk.blue('...async {'))
+    ? indent.concat(chalk.yellow(callback.name.concat($scope.$recur > 1 ? `:${$scope.$recur}() {` : '() {')))
+    : chalk.yellow(') {')
 
-  if (Array.isArray(data)) console.log(header.concat(chalk.grey(' // '.concat(toArray(data)))))
-  else {
+  if (Array.isArray(any)) {
+    // action returned array to be pushed in frames
+    console.log(header.concat(chalk.grey(' // '.concat(toArray(any)))))
+  } else {
+    // action returned object or another action
     console.log(header)
-    console.log(indent.concat(chalk.cyan.bold('   \u23ce ').concat(toAny(data))))
+    console.log(indent.concat(chalk.cyan('   \u23ce ').concat(toAny(any))))
+    if (callback.name) console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat(callback.name))))
+    else console.log(indent.concat(chalk.yellow('} ')))
   }
 }
 
-const shifted = (data, { $stack, $level }) => {
-  if (data) {
-    const indent = toIndent($stack, $level)
-    if (typeof data === 'string') console.log(indent.concat(chalk.yellow.dim('} '), chalk.gray('// '.concat(data))))
-    else console.log(indent.concat(chalk.cyan.bold('< '), toAny(data)))
+const shifted = ({ $scope, $any }, { $stack, $level }) => {
+  const indent = toIndent($stack, $level)
+  if ($any) {
+    // shifted value
+    console.log(indent.concat(chalk.gray.bold('< '), toAny($any)))
+  } else {
+    // returned named action
+    console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat($scope.$name))))
   }
 }
 

@@ -4,14 +4,13 @@ chai.should()
 const flow = require('../index')
 const { invoked, shifted, yielding, logEvent } = require('../logger')
 
-// activities
 function authenticate({ name }) {
   return [
     { ask: `Am I speaking with ${name}?` },
-    ({ answer, $count }) => {
+    ({ answer, $recur }) => {
       if (answer === 'yes') return
       if (answer === 'no') return verifyPhone
-      if ($count < 2) return authenticate
+      if ($recur < 2) return authenticate
     }
   ]
 }
@@ -19,10 +18,10 @@ function authenticate({ name }) {
 function verifyPhone({ name }) {
   return [
     { ask: `Is this the correct number for ${name}?` },
-    ({ answer, $count }) => {
+    ({ answer, $recur }) => {
       if (answer === 'yes') return canComeToThePhone
       if (answer === 'no') return
-      if ($count < 2) return verifyPhone
+      if ($recur < 2) return verifyPhone
     }
   ]
 }
@@ -30,10 +29,10 @@ function verifyPhone({ name }) {
 function canComeToThePhone({ name }) {
   return [
     { ask: `Ok, can ${name} come to the phone?` },
-    ({ answer, $count }) => {
+    ({ answer, $recur }) => {
       if (answer === 'yes') return gotToThePhone
       if (answer === 'no') return
-      if ($count < 2) return canComeToThePhone
+      if ($recur < 2) return canComeToThePhone
     }
   ]
 }
@@ -41,9 +40,9 @@ function canComeToThePhone({ name }) {
 function gotToThePhone({ name }) {
   return [
     { say: `Please say something when ${name} gets to the phone.` },
-    ({ answer, $count }) => {
+    ({ answer, $recur }) => {
       if (answer) return authenticate
-      if ($count < 10) return gotToThePhone
+      if ($recur < 10) return gotToThePhone
     }
   ]
 }
@@ -111,11 +110,11 @@ describe('simple test', () => {
     ]
     const $ = play(events)
     $.authenticate.answer.should.equal('yes')
-    $.authenticate.$count.should.equal(2)
+    $.authenticate.$recur.should.equal(1)
     $.verifyPhone.answer.should.equal('yes')
     $.canComeToThePhone.answer.should.equal('yes')
     $.gotToThePhone.answer.should.equal('here')
-    $.gotToThePhone.$count.should.equal(2)
+    $.gotToThePhone.$recur.should.equal(2)
     $.root.authenticated.should.equal(true)
     $.root.say.should.equal('Hello John Doe. How are you today?')
   })

@@ -5,44 +5,48 @@
  */
 module.exports = ({ actions, params = {}, invoked = () => {}, shifted = () => {} }) => {
   if (typeof actions !== 'object') throw Error('actions must be an object')
-  const $ = { ...params, $actions: actions, $stack: [], $level: 0 }
+  const $ = { ...params, $actions: actions, $name: '$root', $level: 0, $stack: [] }
   $.$scope = $
 
   const invoke = callback => {
     $.$yield = null
+    if (callback.name) {
+      if ($.$scope.$name != callback.name) {
+        $.$scope = $[callback.name] = $[callback.name] || { $name: callback.name }
+        $.$scope.$recur = 1
+      } else $.$scope.$recur++
+      $.$stack.unshift({ $scope: $.$scope, $root: $.$stack.length === 0 })
+    }
     const any = callback({ ...$, ...$.$scope })
     invoked(callback, any, $)
-    $.$level++
-    $.$stack.unshift($.$scope.$name)
-
     if (Array.isArray(any)) {
-      $.$stack.unshift(...any)
-      return next()
+      $.$level++
+      $.$stack.unshift(...any.map(value => ({ $scope: $.$scope, $any: value })))
+      return shift()
     }
     return next(any)
+  }
+
+  const shift = () => {
+    const frame = $.$stack.shift()
+    if (!frame || frame.$root) return { ...$ }
+    if (!frame.$any) $.$level--
+    $.$scope = frame.$scope
+    shifted(frame, $)
+    return next(frame.$any)
   }
 
   const next = any => {
     if (typeof any === 'object') Object.assign($.$scope, any)
     if ($.$yield) return invoke($.$yield)
     if (typeof any === 'function') {
-      if (!any.name) {
-        // anonymous callbacks yield state back to the caller unless is root
+      if (!any.name && $.$stack.length) {
         $.$yield = any
-        return $.$stack.length ? $ : invoke(any)
+        return { ...$ }
       }
-      $.$scope = $[any.name] = $[any.name] || { $name: any.name, $count: 0 }
-      $.$scope.$count++
       return invoke(any)
     }
-
-    if (!(any = $.$stack.shift())) return $
-    if (typeof any === 'string') {
-      $.$scope = $[any]
-      $.$level--
-    }
-    shifted(any, $)
-    return next(any)
+    return shift()
   }
 
   return next
