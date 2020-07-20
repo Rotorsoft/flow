@@ -49,10 +49,11 @@ function gotToThePhone({ name }) {
   ]
 }
 
-const play = (events, theroot = root) => {
+const play = (events, theroot = root, hooks) => {
   const options = {
     params: { name: 'John Doe' },
     actions: { authenticate, verifyPhone, canComeToThePhone, gotToThePhone },
+    hooks,
     invoked,
     shifted
   }
@@ -72,6 +73,8 @@ const play = (events, theroot = root) => {
 
   return state
 }
+
+const $msgHook = $ => msg => console.log($.$scope.$name, msg)
 
 describe('simple test', () => {
   it('should authenticate', async () => {
@@ -142,7 +145,7 @@ describe('anonymous root tests', () => {
       { number: 'invalid' },
       { number: '3' }
     ]
-    const $ = play(events, anonymous)
+    const $ = play(events, anonymous, { $msgHook })
     $.authenticate.answer.should.equal('yes')
     $.authenticated.should.equal(true)
     $.say.should.equal('Hello John Doe. How are you today?')
