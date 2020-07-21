@@ -8,12 +8,17 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked = () => {}, shifte
   if (typeof hooks !== 'object') throw Error('hooks must be an object')
 
   const $ = { ...params, $actions: actions, $name: '$root', $recur: 0, $level: 0, $stack: [] }
-  Object.keys(hooks).map(name =>
-    typeof hooks[name] === 'function'
-      ? ($[name] = (...args) => hooks[name]({ ...$ }, ...args))
-      : () => `invalid hook: ${name}`
-  )
+  Object.keys(hooks).map(name => {
+    const hook = hooks[name]
+    if (typeof hook !== 'function') throw Error(`hook ${name} must be a function`)
+    $[name] = (...args) => {
+      const state = hook({ ...$ }, ...args)
+      if (typeof state === 'object') mutate(state)
+    }
+  })
   $.$scope = $
+
+  const mutate = state => Object.keys(state).map(k => ($[k] = Object.assign($[k] || {}, state[k])))
 
   const invoke = callback => {
     const name = callback.name || ($.$stack.length ? '' : '$root')
@@ -59,7 +64,7 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked = () => {}, shifte
   return function (state) {
     if (typeof state === 'function' && !$.$stack.length) return invoke(state)
     else if (typeof state === 'object') {
-      Object.keys(state).map(k => ($[k] = Object.assign($[k] || {}, state[k])))
+      mutate(state)
       return $.$yield ? invoke($.$yield) : shift()
     }
     throw 'invalid operation'

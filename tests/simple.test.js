@@ -75,6 +75,9 @@ const play = (events, theroot = root, hooks) => {
 }
 
 const $msgHook = ({ $scope }, msg) => console.log($scope.$name, msg)
+const $counterHook = ({ count, check }) => {
+  return { counter: { ['number'.concat(check.counter)]: count.number } }
+}
 
 describe('simple test', () => {
   it('should authenticate', async () => {
@@ -142,7 +145,7 @@ describe('anonymous root tests', () => {
       { count: { number: 'invalid' } },
       { count: { number: '3' } }
     ]
-    const $ = play(events, anonymous, { $msgHook })
+    const $ = play(events, anonymous, { $msgHook, $counterHook })
     $.authenticate.answer.should.equal('yes')
     $.authenticated.should.equal(true)
     $.say.should.equal('Hello John Doe. How are you today?')

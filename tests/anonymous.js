@@ -1,4 +1,4 @@
-module.exports = ({ $actions, name, $msgHook }) => {
+module.exports = ({ $actions, name, $msgHook, $counterHook }) => {
   return [
     $actions.authenticate,
     function count({ check = { counter: 0 } }) {
@@ -10,6 +10,7 @@ module.exports = ({ $actions, name, $msgHook }) => {
             if (isNaN(number)) return [{ say: 'which is not a number.', counter }, count]
             $msgHook('incrementing counter')
             counter++
+            $counterHook()
             if (counter < 3) return [{ say: `Got ${counter} number(s)`, counter }, count]
             return { say: 'Thank you.' }
           }
