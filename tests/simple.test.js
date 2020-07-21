@@ -58,12 +58,12 @@ const play = (events, theroot = root, hooks) => {
     shifted
   }
 
-  const f = flow(options)
-  let state = f(theroot) // start
+  const next = flow(options)
+  let state = next(theroot) // start
   yielding(state)
   for (const e of events) {
     logEvent(e)
-    state = f(e)
+    state = next(e)
     if (state.$stack.length) yielding(state)
   }
 
@@ -74,14 +74,11 @@ const play = (events, theroot = root, hooks) => {
   return state
 }
 
-const $msgHook = $ => msg => console.log($.$scope.$name, msg)
+const $msgHook = ({ $scope }, msg) => console.log($scope.$name, msg)
 
 describe('simple test', () => {
   it('should authenticate', async () => {
-    const events = [
-      { answer: 'whatever' }, // authenticate
-      { answer: 'yes' } // authenticate
-    ]
+    const events = [{ authenticate: { answer: 'whatever' } }, { authenticate: { answer: 'yes' } }]
     const $ = play(events)
     $.authenticate.answer.should.equal('yes')
     $.root.authenticated.should.equal(true)
@@ -90,12 +87,12 @@ describe('simple test', () => {
 
   it('should verify phone', async () => {
     const events = [
-      { answer: 'no' }, // authenticate
-      { answer: 'yes' }, // correct number?
-      { answer: 'yes' }, // come to the phone?
+      { authenticate: { answer: 'no' } },
+      { verifyPhone: { answer: 'yes' } },
+      { canComeToThePhone: { answer: 'yes' } },
       {}, // waiting got to the phone
-      { answer: 'here' }, // got to the phone
-      { answer: 'yes' } // authenticate
+      { gotToThePhone: { answer: 'here' } },
+      { authenticate: { answer: 'yes' } }
     ]
     const $ = play(events)
     $.authenticate.answer.should.equal('yes')
@@ -110,9 +107,9 @@ describe('simple test', () => {
 
   it('should leave message when not available', async () => {
     const events = [
-      { answer: 'no' }, // authenticate
-      { answer: 'yes' }, // correct number?
-      { answer: 'no' } // come to the phone?
+      { authenticate: { answer: 'no' } },
+      { verifyPhone: { answer: 'yes' } },
+      { canComeToThePhone: { answer: 'no' } }
     ]
     const $ = play(events)
     $.authenticate.answer.should.equal('no')
@@ -123,9 +120,9 @@ describe('simple test', () => {
 
   it('should apologize', async () => {
     const events = [
-      { answer: 'no' }, // authenticate
-      { answer: 'what?' }, // correct number?
-      { answer: 'no' } // correct number?
+      { authenticate: { answer: 'no' } },
+      { verifyPhone: { answer: 'what?' } },
+      { verifyPhone: { answer: 'no' } }
     ]
     const $ = play(events)
     $.authenticate.answer.should.equal('no')
@@ -137,13 +134,13 @@ describe('simple test', () => {
 describe('anonymous root tests', () => {
   it('should authenticate', async () => {
     const events = [
-      { answer: 'whatever' }, // authenticate
-      { answer: 'yes' }, // authenticate
-      { number: 'abc' },
-      { number: '1' },
-      { number: '2' },
-      { number: 'invalid' },
-      { number: '3' }
+      { authenticate: { answer: 'whatever' } },
+      { authenticate: { answer: 'yes' } },
+      { count: { number: 'abc' } },
+      { count: { number: '1' } },
+      { count: { number: '2' } },
+      { count: { number: 'invalid' } },
+      { count: { number: '3' } }
     ]
     const $ = play(events, anonymous, { $msgHook })
     $.authenticate.answer.should.equal('yes')

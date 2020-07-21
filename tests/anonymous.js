@@ -1,25 +1,16 @@
 module.exports = ({ $actions, name, $msgHook }) => {
   return [
     $actions.authenticate,
-    function count({ summary = { counter: 0 } }) {
+    function count({ check = { counter: 0 } }) {
       return [
-        { say: `Please enter ${3 - summary.counter} number(s)` },
+        { say: `Please enter ${3 - check.counter} number(s)` },
         ({ number }) => [
           { say: `You entered ${number}` },
-          function check({ summary = { counter: 0 } }) {
-            let counter = summary.counter
-            if (isNaN(number)) return [{ $scope: 'summary', say: 'which is not a number.', counter }, count]
+          function check({ counter = 0 }) {
+            if (isNaN(number)) return [{ say: 'which is not a number.', counter }, count]
             $msgHook('incrementing counter')
             counter++
-            if (counter < 3)
-              return [
-                {
-                  $scope: 'summary',
-                  say: `Got ${counter} number(s)`,
-                  counter
-                },
-                count
-              ]
+            if (counter < 3) return [{ say: `Got ${counter} number(s)`, counter }, count]
             return { say: 'Thank you.' }
           }
         ]

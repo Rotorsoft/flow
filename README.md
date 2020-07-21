@@ -92,8 +92,8 @@ const next = flow({
 })
 
 let state = next(root) // start root action
-state = next({ answer: 'what?' })
-state = next({ answer: 'yes' })
+state = next({ action1: { answer: 'what?' } }) // update action1 state
+state = next({ action1: { answer: 'yes' } }) // update action1 state
 console.log(state)
 ```
 
