@@ -3,7 +3,7 @@
  * Copyright(c) 2020 rotorsoft@outlook.com
  * MIT Licensed
  */
-module.exports = ({ actions, params = {}, hooks = {}, invoked = () => {}, shifted = () => {} }) => {
+module.exports = ({ actions, params = {}, hooks = {}, invoked, shifted }) => {
   if (typeof actions !== 'object') throw Error('actions must be an object')
   if (typeof hooks !== 'object') throw Error('hooks must be an object')
 
@@ -12,7 +12,7 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked = () => {}, shifte
     const hook = hooks[name]
     if (typeof hook !== 'function') throw Error(`hook ${name} must be a function`)
     $[name] = (...args) => {
-      const any = hook({ ...$ }, ...args)
+      const any = hook(state(), ...args)
       if (typeof any === 'function') return any
       if (typeof any === 'object') mutate(any)
     }
@@ -20,6 +20,7 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked = () => {}, shifte
   $.$scope = $
 
   const mutate = state => Object.keys(state).map(k => ($[k] = Object.assign($[k] || {}, state[k])))
+  const state = () => ({ ...$, ...$.$scope })
 
   const invoke = callback => {
     const name = callback.name || ($.$stack.length ? '' : '$root')
@@ -30,12 +31,12 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked = () => {}, shifte
       } else $.$scope.$recur++
     } else if (callback !== $.$yield) {
       $.$yield = callback
-      return { ...$ }
+      return state()
     }
     $.$yield = null
 
-    const any = callback({ ...$, ...$.$scope })
-    invoked(name, any, $)
+    const any = callback(state())
+    if (invoked) invoked(name, any, state())
     if (Array.isArray(any)) {
       if (name) {
         $.$level++
@@ -49,10 +50,10 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked = () => {}, shifte
 
   const shift = () => {
     const frame = $.$stack.shift()
-    if (!frame) return { ...$ }
+    if (!frame) return state()
     if (!frame.$any) $.$level--
     $.$scope = frame.$scope
-    shifted(frame, $)
+    if (shifted) shifted(frame, state())
     return next(frame.$any)
   }
 
