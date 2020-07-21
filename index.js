@@ -12,8 +12,9 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked = () => {}, shifte
     const hook = hooks[name]
     if (typeof hook !== 'function') throw Error(`hook ${name} must be a function`)
     $[name] = (...args) => {
-      const state = hook({ ...$ }, ...args)
-      if (typeof state === 'object') mutate(state)
+      const any = hook({ ...$ }, ...args)
+      if (typeof any === 'function') return any
+      if (typeof any === 'object') mutate(any)
     }
   })
   $.$scope = $
