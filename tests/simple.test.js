@@ -60,11 +60,11 @@ const play = (events, theroot = root, hooks) => {
 
   const next = flow(options)
   let state = next(theroot) // start
-  yielding(state)
+  yielding(state.$level)
   for (const e of events) {
     logEvent(e)
     state = next(e)
-    if (state.$stack.length) yielding(state)
+    if (!state.$done) yielding(state.$level)
   }
 
   console.log('\n===')
@@ -74,7 +74,7 @@ const play = (events, theroot = root, hooks) => {
   return state
 }
 
-const $msgHook = ({ $scope }, msg) => console.log($scope.$name, msg)
+const $msgHook = ({ $scope }, msg) => console.log($scope, msg)
 const $counterHook = ({ count, check }) => {
   return { counter: { ['number'.concat(check.counter)]: count.number } }
 }

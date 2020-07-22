@@ -2,39 +2,41 @@
 
 ### A minimalistic functional state machine
 
-This is my attempt to build a functional state machine in less than 100 lines of code without any external dependencies
+This is an attempt to build a functional state machine in less than 100 lines of code without any external dependencies. I welcome reviewers who can contribute to make it more efficient without compromising funcionality.
 
-Borrowing from functional programming, coroutines, and generator functions... this is a "coded by convention" loop that sets the foundation to compose more complex applications by using just three basic constructs:
+Borrowing from functional programming, coroutines, and generator functions; this "coded by convention" loop sets the foundation to compose more complex applications with just three basic constructs:
 
-- **Actions** - Pure functions to encapsulate application logic
+- **Actions** - Pure functions with logic to drive state transitions
 
 - **Scopes** - Persisted state of **named actions**
 
-- **Flow** - A closure that returns a coroutine implementing the loop
+- **Flow** - A closure to initialize the coroutine implementing the loop and holding the state object. The state is essentially a map of scopes indexed by action name and other properties included in mutations and hook actions
 
 ### Conventions
 
-- **Scopes** (of **named actions**) are persisted state. The flow state is essentially a map of states indexed by action names
+- **Scopes** are persisted state of **named actions**
 
 - **Anonymous** actions **yield** the state back to the caller. Think of it as a one-time yielding generator function
 
 - **Actions** can optionally return:
 
-  - An **Object** - to mutate the current scope
+  - An **Object** - to mutate the **current** scope
   - An **Action** - to allow composition
   - An **Array** of the above - to be executed in order
 
+- **Hooks** are special helper actions that don't have scope and can return full state mutation objects or more actions
+
 ### The loop
 
-The flow is invoked with a map of actions and some optional state and event hooks (_invoked_, _shifted_ callbacks useful for tracing and debugging)
+The flow is initialized with an optional map of actions, state, and hooks (_invoked_, and _shifted_ callbacks can also be injected for tracing and debugging).
 
-**_The injected actions map allows composition without hard coupling_**
+**_The injected action and hook maps allows composition without coupling modules_**.
 
-The returned closure is a coroutine that should be started with a **root action** and successively invoked with events (state mutations) following the Observer pattern. It always returns its state
+The returned closure is a coroutine that must be started with the **root action** and successively invoked with state mutations following the Observer pattern. It always returns its state.
 
-Actions are internally invoked with a single object argument combining flow state and current scope
+Actions are internally invoked with a single object argument combining state and current scope.
 
-The flow keeps track of action recursion, execution stack, and indentation level as part of the state
+The flow keeps track of action recursion, execution stack, and indentation level as part of the state.
 
 ### Schema
 
@@ -45,18 +47,20 @@ flow = {
   $actions, // actions map
 
   // internal state
-  $stack, // execution stack
   $level, // indentation level
   $yield, // yielding action
-  $scope, // the current scope
+  $scope, // current scope name
+  $done, // true when done
 
   // the app state
   ...scopes // map indexed by scope name
+  ...other // map of other state properties included in mutations
 }
 
 scope = {
-  $name, // action name
+  $scope, // scope name
   $recur, // recurrence counter
+  $parent, // parent scope name
   ...state // state
 }
 ```

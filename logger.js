@@ -30,44 +30,40 @@ const toAny = (any, { max = 200, color = true } = {}) => {
   else return typeof any === 'function' ? toPrototype(any) : toObject(any, max)
 }
 
-const YIELD = chalk.red.bold('> ')
-const yielding = ({ $stack, $level }) => {
-  const indent = toIndent($stack, $level)
-  process.stdout.write(indent.concat(YIELD))
+const yielding = level => {
+  const indent = '     '.concat(' '.repeat(level * 3))
+  process.stdout.write(indent.concat(chalk.red.bold('> ')))
 }
 
 const logEvent = e => {
   process.stdout.write(chalk.red(JSON.stringify(e)))
 }
 
-const toIndent = ($stack, $level) =>
-  chalk.gray(`[${$stack.length.toString().padStart(2)}] `.concat(' '.repeat($level * 3)))
+const toIndent = (depth, level) => chalk.gray(`[${depth.toString().padStart(2)}] `.concat(' '.repeat(level * 3)))
 
-const invoked = (name, any, { $stack, $level, $scope }) => {
-  const indent = toIndent($stack, $level)
-  const header = name
-    ? chalk.yellow(indent.concat(name.concat($scope.$recur > 1 ? `:${$scope.$recur}() {` : '() {')))
-    : ''
+const invoked = ({ name, value, recur, depth, level }) => {
+  const indent = toIndent(depth, level)
+  const header = name ? chalk.yellow(indent.concat(name.concat(recur > 1 ? `:${recur}() {` : '() {'))) : ''
 
-  if (Array.isArray(any)) {
+  if (Array.isArray(value)) {
     // action returned array to be pushed in frames
-    console.log(header.concat(chalk.grey(' // '.concat(toArray(any)))))
+    console.log(header.concat(chalk.grey(' // '.concat(toArray(value)))))
   } else {
     // action returned object or another action
     console.log(header)
-    console.log(indent.concat(chalk.cyan('   \u23ce ').concat(toAny(any))))
+    console.log(indent.concat(chalk.cyan('   \u23ce ').concat(toAny(value))))
     if (name) console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat(name))))
   }
 }
 
-const shifted = ({ $scope, $any }, { $stack, $level }) => {
-  const indent = toIndent($stack, $level)
-  if ($any) {
+const shifted = ({ scope, value, depth, level }) => {
+  const indent = toIndent(depth, level)
+  if (value) {
     // shifted value
-    console.log(indent.concat(chalk.gray.bold('< '), toAny($any)))
+    console.log(indent.concat(chalk.gray.bold('< '), toAny(value)))
   } else {
     // returned named action
-    console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat($scope.$name))))
+    console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat(scope))))
   }
 }
 
