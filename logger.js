@@ -43,7 +43,7 @@ const toIndent = (depth, level) => chalk.gray(`[${depth.toString().padStart(2)}]
 
 const invoked = ({ name = '', value, recur, depth, level }) => {
   const indent = toIndent(depth, level)
-  const fname = name.concat(recur > 1 ? `:${recur}` : '')
+  const fname = name.concat(recur ? `:${recur}` : '')
   const header = name ? chalk.yellow(indent.concat(fname, '() {')) : ''
 
   if (Array.isArray(value)) {
@@ -60,7 +60,7 @@ const invoked = ({ name = '', value, recur, depth, level }) => {
 
 const shifted = ({ scope, value, recur, depth, level }) => {
   const indent = toIndent(depth, level)
-  const fname = scope.concat(recur > 1 ? `:${recur}` : '')
+  const fname = scope.concat(recur ? `:${recur}` : '')
   if (value) {
     // shifted value
     console.log(indent.concat(chalk.gray.bold('< '), toAny(value)))
