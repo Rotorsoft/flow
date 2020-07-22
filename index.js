@@ -26,11 +26,10 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked, shifted }) => {
     const name = callback.name || (stack.length ? '' : '$root')
     if (name) {
       if ($.$scope != name) {
-        const state = ($[name] = $[name] || { $scope: name })
+        const state = ($[name] = $[name] || { $scope: name, $recur: 0 })
         state.$parent = $.$scope
-        state.$recur = 1
         $.$scope = name
-      } else $[name].$recur++
+      }
     } else if (callback !== $.$yield) {
       $.$yield = callback
       return state()
@@ -41,6 +40,7 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked, shifted }) => {
     if (invoked) invoked({ name, value: any, recur: $[$.$scope].$recur, depth: stack.length, level: $.$level })
 
     if (name && any && (Array.isArray(any) || typeof any === 'function')) {
+      $[name].$recur++
       $.$level++
       stack.unshift({ scope: name })
     }
@@ -57,9 +57,19 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked, shifted }) => {
     const frame = stack.shift()
     $.$done = !stack.length
     if (!frame) return state()
-    if (!frame.value) $.$level--
+    if (!frame.value) {
+      $[frame.scope].$recur--
+      $.$level--
+    }
     $.$scope = frame.scope
-    if (shifted) shifted({ scope: frame.scope, value: frame.value, depth: stack.length, level: $.$level })
+    if (shifted)
+      shifted({
+        scope: frame.scope,
+        value: frame.value,
+        recur: $[frame.scope].$recur,
+        depth: stack.length,
+        level: $.$level
+      })
     return next(frame.value)
   }
 

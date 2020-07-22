@@ -99,11 +99,11 @@ describe('simple test', () => {
     ]
     const $ = play(events)
     $.authenticate.answer.should.equal('yes')
-    $.authenticate.$recur.should.equal(1)
+    $.authenticate.$recur.should.equal(0)
     $.verifyPhone.answer.should.equal('yes')
     $.canComeToThePhone.answer.should.equal('yes')
     $.gotToThePhone.answer.should.equal('here')
-    $.gotToThePhone.$recur.should.equal(2)
+    $.gotToThePhone.$recur.should.equal(0)
     $.root.authenticated.should.equal(true)
     $.root.say.should.equal('Hello John Doe. How are you today?')
   })

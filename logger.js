@@ -41,9 +41,10 @@ const logEvent = e => {
 
 const toIndent = (depth, level) => chalk.gray(`[${depth.toString().padStart(2)}] `.concat(' '.repeat(level * 3)))
 
-const invoked = ({ name, value, recur, depth, level }) => {
+const invoked = ({ name = '', value, recur, depth, level }) => {
   const indent = toIndent(depth, level)
-  const header = name ? chalk.yellow(indent.concat(name.concat(recur > 1 ? `:${recur}() {` : '() {'))) : ''
+  const fname = name.concat(recur > 1 ? `:${recur}` : '')
+  const header = name ? chalk.yellow(indent.concat(fname, '() {')) : ''
 
   if (Array.isArray(value)) {
     // action returned array to be pushed in frames
@@ -52,18 +53,20 @@ const invoked = ({ name, value, recur, depth, level }) => {
     // action returned object or another action
     console.log(header)
     console.log(indent.concat(chalk.cyan('   \u23ce ').concat(toAny(value))))
-    if (name) console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat(name))))
+    if (name && typeof value === 'object')
+      console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat(fname))))
   }
 }
 
-const shifted = ({ scope, value, depth, level }) => {
+const shifted = ({ scope, value, recur, depth, level }) => {
   const indent = toIndent(depth, level)
+  const fname = scope.concat(recur > 1 ? `:${recur}` : '')
   if (value) {
     // shifted value
     console.log(indent.concat(chalk.gray.bold('< '), toAny(value)))
   } else {
     // returned named action
-    console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat(scope))))
+    console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat(fname))))
   }
 }
 
