@@ -1,6 +1,6 @@
 {
   "name": "@rotorsoft/flow",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "A minimalistic state machine",
   "main": "index.js",
   "author": "rotorsoft <rotorsoft@outlook.com>",
