@@ -2,7 +2,7 @@ const chai = require('chai')
 chai.should()
 
 const flow = require('../index')
-const { invoked, shifted, yielding, logEvent } = require('../logger')
+const { invoked, shifted, mutating } = require('../logger')
 const root = require('./root')
 const anonymous = require('./anonymous')
 
@@ -55,16 +55,14 @@ const play = (events, theroot = root, hooks) => {
     actions: { authenticate, verifyPhone, canComeToThePhone, gotToThePhone },
     hooks,
     invoked,
-    shifted
+    shifted,
+    mutating
   }
 
   const next = flow(options)
   let state = next(theroot) // start
-  yielding(state.$level)
   for (const e of events) {
-    logEvent(e)
     state = next(e)
-    if (!state.$done) yielding(state.$level)
   }
 
   console.log('\n===')
@@ -74,7 +72,7 @@ const play = (events, theroot = root, hooks) => {
   return state
 }
 
-const $msgHook = ({ $scope }, msg) => console.log($scope, msg)
+const $msgHook = ({ $scope }, msg) => console.log(`${$scope}: ${msg}`)
 const $counterHook = ({ count, check }) => {
   return { counter: { ['number'.concat(check.counter)]: count.number } }
 }

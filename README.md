@@ -28,7 +28,7 @@ Borrowing from functional programming, coroutines, and generator functions; this
 
 ### The loop
 
-The flow is initialized with an optional map of actions, state, and hooks (_invoked_, and _shifted_ callbacks can also be injected for tracing and debugging).
+The flow is initialized with an optional map of actions, state, and hooks (_invoked_, _shifted_, _mutating_ callbacks can also be injected for tracing and debugging).
 
 **_The injected action and hook maps allows composition without coupling modules_**.
 
@@ -47,10 +47,9 @@ flow = {
   $actions, // actions map
 
   // internal state
-  $level, // indentation level
-  $yield, // yielding action
   $scope, // current scope name
-  $done, // true when done
+  $yield, // yielding action
+  $done, // end of stack reached
 
   // the app state
   ...scopes // map indexed by scope name
@@ -59,6 +58,8 @@ flow = {
 
 scope = {
   $scope, // scope name
+  $level, // indentation level
+  $depth, // current stack length
   $recur, // recurrence counter
   $parent, // parent scope name
   ...state // state
@@ -114,47 +115,33 @@ npm test
 The provided tests are self explanatory and should log a trace like this:
 
 ```javascript
-    √ should authenticate (60ms)
+    √ should authenticate (53ms)
 [ 0] root() { // [authenticate({name}), root({authenticate,verifyPhone,canComeToThePhone})]
-[ 2]    < authenticate({name})
 [ 2]    authenticate() { // [{"ask":"Am I speakin...}, ({answer,$recur})]
-[ 4]       < {"ask":"Am I speaking with John Doe?"}
-[ 3]       < ({answer,$recur})
-[ 3]       > {"answer":"no"}
-[ 3]          ⏎ verifyPhone({name})
+[ 2]       ⏎ {"ask":"Am I speaking with John Doe?"}
+[ 2]       ({answer,$recur}) ... {"authenticate":{"answer":"no"}}
 [ 3]       verifyPhone() { // [{"ask":"Is this the ...}, ({answer,$recur})]
-[ 5]          < {"ask":"Is this the correct number for John Doe?"}
-[ 4]          < ({answer,$recur})
-[ 4]          > {"answer":"yes"}
-[ 4]             ⏎ canComeToThePhone({name})
+[ 3]          ⏎ {"ask":"Is this the correct number for John Doe?"}
+[ 3]          ({answer,$recur}) ... {"verifyPhone":{"answer":"yes"}}
 [ 4]          canComeToThePhone() { // [{"ask":"Ok, can John...}, ({answer,$recur})]
-[ 6]             < {"ask":"Ok, can John Doe come to the phone?"}
-[ 5]             < ({answer,$recur})
-[ 5]             > {"answer":"yes"}
-[ 5]                ⏎ gotToThePhone({name})
+[ 4]             ⏎ {"ask":"Ok, can John Doe come to the phone?"}
+[ 4]             ({answer,$recur}) ... {"canComeToThePhone":{"answer":"yes"}}
 [ 5]             gotToThePhone() { // [{"say":"Please say s...}, ({answer,$recur})]
-[ 7]                < {"say":"Please say something when John Doe gets to the phone."}
-[ 6]                < ({answer,$recur})
-[ 6]                > {}
-[ 6]                   ⏎ gotToThePhone({name})
-[ 6]                gotToThePhone:2() { // [{"say":"Please say s...}, ({answer,$recur})]
-[ 8]                   < {"say":"Please say something when John Doe gets to the phone."}
-[ 7]                   < ({answer,$recur})
-[ 7]                   > {"answer":"here"}
-[ 7]                      ⏎ authenticate({name})
+[ 5]                ⏎ {"say":"Please say something when John Doe gets to the phone."}
+[ 5]                ({answer,$recur}) ... {}
+[ 6]                gotToThePhone:1() { // [{"say":"Please say s...}, ({answer,$recur})]
+[ 6]                   ⏎ {"say":"Please say something when John Doe gets to the phone."}
+[ 6]                   ({answer,$recur}) ... {"gotToThePhone":{"answer":"here"}}
 [ 7]                   authenticate() { // [{"ask":"Am I speakin...}, ({answer,$recur})]
-[ 9]                      < {"ask":"Am I speaking with John Doe?"}
-[ 8]                      < ({answer,$recur})
-[ 8]                      > {"answer":"yes"}
-[ 8]                         ⏎
+[ 7]                      ⏎ {"ask":"Am I speaking with John Doe?"}
+[ 7]                      ({answer,$recur}) ... {"authenticate":{"answer":"yes"}}
 [ 7]                   } // authenticate
-[ 6]                } // gotToThePhone
+[ 6]                } // gotToThePhone:1
 [ 5]             } // gotToThePhone
 [ 4]          } // canComeToThePhone
 [ 3]       } // verifyPhone
 [ 2]    } // authenticate
-[ 1]    < root({authenticate,verifyPhone,canComeToThePhone})
-[ 1]    root:2() {
+[ 1]    root() {
 [ 1]       ⏎ {"say":"Hello John Doe. How are you today?","authenticated":true}
 [ 1]    } // root
 [ 0] } // root
@@ -168,47 +155,60 @@ The provided tests are self explanatory and should log a trace like this:
     canComeToThePhone: [Function: canComeToThePhone],
     gotToThePhone: [Function: gotToThePhone]
   },
-  '$name': '$root',
-  '$recur': 0,
-  '$level': 0,
-  '$stack': [],
-  '$scope': {
-    '$name': 'root',
-    '$recur': 2,
-    say: 'Hello John Doe. How are you today?',
-    authenticated: true
-  },
   root: {
-    '$name': 'root',
-    '$recur': 2,
+    '$recur': 0,
+    '$scope': 'root',
+    '$parent': undefined,
+    '$level': 0,
+    '$depth': 0,
     say: 'Hello John Doe. How are you today?',
     authenticated: true
   },
+  '$scope': 'root',
   '$yield': null,
+  '$done': true,
   authenticate: {
-    '$name': 'authenticate',
-    '$recur': 1,
+    '$recur': 0,
+    '$scope': 'authenticate',
+    '$parent': 'root',
+    '$level': 1,
+    '$depth': 2,
     ask: 'Am I speaking with John Doe?',
     answer: 'yes'
   },
   verifyPhone: {
-    '$name': 'verifyPhone',
-    '$recur': 1,
+    '$recur': 0,
+    '$scope': 'verifyPhone',
+    '$parent': 'authenticate',
+    '$level': 2,
+    '$depth': 3,
     ask: 'Is this the correct number for John Doe?',
     answer: 'yes'
   },
   canComeToThePhone: {
-    '$name': 'canComeToThePhone',
-    '$recur': 1,
+    '$recur': 0,
+    '$scope': 'canComeToThePhone',
+    '$parent': 'verifyPhone',
+    '$level': 3,
+    '$depth': 4,
     ask: 'Ok, can John Doe come to the phone?',
     answer: 'yes'
   },
   gotToThePhone: {
-    '$name': 'gotToThePhone',
-    '$recur': 2,
+    '$recur': 0,
+    '$scope': 'gotToThePhone',
+    '$parent': 'canComeToThePhone',
+    '$level': 4,
+    '$depth': 5,
     say: 'Please say something when John Doe gets to the phone.',
     answer: 'here'
-  }
+  },
+  '$recur': 0,
+  '$parent': undefined,
+  '$level': 0,
+  '$depth': 0,
+  say: 'Hello John Doe. How are you today?',
+  authenticated: true
 }
 ===
 ```

@@ -3,74 +3,65 @@
  * Copyright(c) 2020 rotorsoft@outlook.com
  * MIT Licensed
  */
-module.exports = ({ actions, params = {}, hooks = {}, invoked, shifted }) => {
+module.exports = ({ actions, params = {}, hooks = {}, invoked, shifted, mutating }) => {
   if (typeof actions !== 'object') throw Error('actions must be an object')
   if (typeof hooks !== 'object') throw Error('hooks must be an object')
 
+  let level = 0
   const stack = []
-  const $ = { ...params, $actions: actions, $depth: 0, $level: 0 }
+  const $ = { ...params, $actions: actions }
   Object.keys(hooks).map(name => {
     const hook = hooks[name]
     if (typeof hook !== 'function') throw Error(`hook ${name} must be a function`)
     $[name] = (...args) => {
       const any = hook(state(), ...args)
       if (typeof any === 'function') return any
-      if (typeof any === 'object') mutate(any)
+      if (typeof any === 'object') mutate(any, name)
     }
   })
 
-  const mutate = state => Object.keys(state).map(k => ($[k] = Object.assign($[k] || {}, state[k])))
+  const mutate = (state, hook) => {
+    if (mutating) mutating(state, hook)
+    return Object.keys(state).map(k => ($[k] = Object.assign($[k] || {}, state[k])))
+  }
   const state = () => ({ ...$, ...$[$.$scope] }) // TODO deep copy of state to avoid external side effects
 
   const invoke = callback => {
-    const name = callback.name || (stack.length ? '' : '$root')
-    if (name) {
-      if ($.$scope != name) {
-        const state = ($[name] = $[name] || { $scope: name, $recur: 0 })
-        state.$parent = $.$scope
-        $.$scope = name
-      }
+    const scope = callback.name || (stack.length ? '' : '$root')
+    if (scope) {
+      const state = ($[scope] = $[scope] || { $recur: 0 })
+      const frame = { $scope: scope, $parent: $.$scope, $level: level, $depth: stack.length }
+      frame.$recur = $.$scope === scope ? state.$recur + 1 : 0
+      stack.unshift(frame)
+      level++
+      $.$scope = scope
+      Object.assign(state, frame)
     } else if (callback !== $.$yield) {
       $.$yield = callback
       return state()
     }
     $.$yield = null
 
-    const any = callback(state())
-    if (invoked) invoked({ name, value: any, recur: $[$.$scope].$recur, depth: stack.length, level: $.$level })
+    const $value = callback(state())
+    if (invoked) invoked(scope, $value, { ...$[$.$scope] })
 
-    if (name && any && (Array.isArray(any) || typeof any === 'function')) {
-      $[name].$recur++
-      $.$level++
-      stack.unshift({ scope: name })
-    }
-
-    if (Array.isArray(any)) {
-      stack.unshift(...any.map(value => ({ scope: $.$scope, value })))
-      return shift()
-    }
-
-    return next(any)
+    if (Array.isArray($value)) stack.unshift(...$value.map(value => ({ $value: value })))
+    else stack.unshift({ $value })
+    return shift()
   }
 
   const shift = () => {
     const frame = stack.shift()
     $.$done = !stack.length
     if (!frame) return state()
-    if (!frame.value) {
-      $[frame.scope].$recur--
-      $.$level--
+
+    if (frame.$scope) {
+      level--
+      $.$scope = frame.$scope
+      Object.assign($[$.$scope], frame)
     }
-    $.$scope = frame.scope
-    if (shifted)
-      shifted({
-        scope: frame.scope,
-        value: frame.value,
-        recur: $[frame.scope].$recur,
-        depth: stack.length,
-        level: $.$level
-      })
-    return next(frame.value)
+    if (shifted) shifted(frame.$scope ? 'RETURN' : frame.$value, { ...$[$.$scope] })
+    return next(frame.$value)
   }
 
   const next = any => {
@@ -79,10 +70,10 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked, shifted }) => {
     return shift()
   }
 
-  return function (state) {
-    if (typeof state === 'function' && !stack.length) return invoke(state)
-    else if (typeof state === 'object') {
-      mutate(state)
+  return any => {
+    if (typeof any === 'function' && !stack.length) return invoke(any)
+    if (typeof any === 'object') {
+      mutate(any)
       return $.$yield ? invoke($.$yield) : shift()
     }
     throw 'invalid operation'
