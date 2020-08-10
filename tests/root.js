@@ -1,7 +1,7 @@
 const root = ({ $actions, name }) => {
   return [
     $actions.authenticate,
-    function root({ authenticate, verifyPhone, canComeToThePhone }) {
+    function _({ authenticate, verifyPhone, canComeToThePhone }) {
       const greet = { say: `Hello ${name}. How are you today?`, authenticated: true }
 
       if (authenticate.answer === 'yes') return greet

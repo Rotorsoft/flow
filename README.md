@@ -14,7 +14,7 @@ Borrowing from functional programming, coroutines, and generator functions; this
 
 ### Conventions
 
-- **Scopes** are persisted state of **named actions**
+- **Scopes** are persisted state of **named actions** unless the action name starts with an underscore character \_
 
 - **Anonymous** actions **yield** the state back to the caller. Think of it as a one-time yielding generator function
 
@@ -24,7 +24,7 @@ Borrowing from functional programming, coroutines, and generator functions; this
   - An **Action** - to allow composition
   - An **Array** of the above - to be executed in order
 
-- **Hooks** are special helper actions that don't have scope and can return full state mutation objects or more actions
+- **Hooks** are special helper actions that don't have scope and can return full state mutation objects or more actions. Hooks are attached to the state and can be invoked from other actions
 
 ### The loop
 

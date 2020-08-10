@@ -145,7 +145,7 @@ describe('anonymous root tests', () => {
     ]
     const $ = play(events, anonymous, { $msgHook, $counterHook })
     $.authenticate.answer.should.equal('yes')
-    $.authenticated.should.equal(true)
-    $.say.should.equal('Hello John Doe. How are you today?')
+    $.$root.authenticated.should.equal(true)
+    $.$root.say.should.equal('Hello John Doe. How are you today?')
   })
 })

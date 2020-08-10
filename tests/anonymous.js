@@ -17,7 +17,7 @@ module.exports = ({ $actions, name, $msgHook, $counterHook }) => {
         ]
       ]
     },
-    function $root({ authenticate, verifyPhone, canComeToThePhone }) {
+    function _return({ authenticate, verifyPhone, canComeToThePhone }) {
       const greet = { say: `Hello ${name}. How are you today?`, authenticated: true }
 
       if (authenticate.answer === 'yes') return greet

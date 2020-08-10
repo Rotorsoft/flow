@@ -35,12 +35,12 @@ const toIndent = (depth, level) => {
 }
 
 const invoked = (name = '', value, { $scope, $recur, $depth, $level }) => {
+  if (name && name.startsWith('_')) return
   const indent = toIndent($depth, $level)
   const scope = $scope.concat($recur ? `:${$recur}` : '')
-  const header = name ? chalk.yellow(indent.concat(scope, '() {')) : ''
-
-  if (Array.isArray(value)) console.log(header.concat(chalk.grey(' // '.concat(toArray(value)))))
-  else console.log(header)
+  const array = Array.isArray(value) ? chalk.grey(' // '.concat(toArray(value))) : ''
+  if (name) console.log(chalk.yellow(indent.concat(scope, '() {', array)))
+  else if (array) console.log(chalk.red(indent.concat('   ...', array)))
 }
 
 const shifted = (value, { $scope, $level, $recur, $depth }) => {
@@ -52,13 +52,13 @@ const shifted = (value, { $scope, $level, $recur, $depth }) => {
     const indent = toIndent($depth, $level + 1)
     if (typeof value === 'function') {
       if (!value.name) process.stdout.write(indent.concat(toAny(value), chalk.red.bold(' ... '))) // yielding
-    } else console.log(indent.concat(chalk.gray('\u23ce '), toAny(value)))
+    } else console.log(indent.concat(toAny(value)))
   }
 }
 
 const mutating = (mutation, hook) => {
   const msg = chalk.green.underline(JSON.stringify(mutation))
-  hook ? console.log(hook, msg) : process.stdout.write(msg)
+  hook ? console.log(hook, msg) : console.log(msg)
 }
 
 module.exports = { invoked, shifted, mutating }

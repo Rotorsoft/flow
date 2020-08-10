@@ -26,9 +26,15 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked, shifted, mutating
   }
   const state = () => ({ ...$, ...$[$.$scope] }) // TODO deep copy of state to avoid external side effects
 
-  const invoke = callback => {
-    const scope = callback.name || (stack.length ? '' : '$root')
-    if (scope) {
+  const invoke = (callback, root) => {
+    const scope = root || callback.name
+    if (!scope && callback !== $.$yield) {
+      $.$yield = callback
+      return state()
+    }
+    $.$yield = null
+
+    if (scope && !scope.startsWith('_')) {
       const state = ($[scope] = $[scope] || { $recur: 0 })
       const frame = { $scope: scope, $parent: $.$scope, $level: level, $depth: stack.length }
       frame.$recur = $.$scope === scope ? state.$recur + 1 : 0
@@ -36,11 +42,7 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked, shifted, mutating
       level++
       $.$scope = scope
       Object.assign(state, frame)
-    } else if (callback !== $.$yield) {
-      $.$yield = callback
-      return state()
     }
-    $.$yield = null
 
     const $value = callback(state())
     if (invoked) invoked(scope, $value, { ...$[$.$scope] })
@@ -57,10 +59,10 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked, shifted, mutating
 
     if (frame.$scope) {
       level--
-      $.$scope = frame.$scope
-      Object.assign($[$.$scope], frame)
-    }
-    if (shifted) shifted(frame.$scope ? 'RETURN' : frame.$value, { ...$[$.$scope] })
+      Object.assign($[frame.$scope], frame)
+      if (shifted) shifted('RETURN', { ...$[$.$scope] })
+      $.$scope = frame.$parent
+    } else if (shifted) shifted(frame.$value, { ...$[$.$scope] })
     return next(frame.$value)
   }
 
@@ -71,7 +73,8 @@ module.exports = ({ actions, params = {}, hooks = {}, invoked, shifted, mutating
   }
 
   return any => {
-    if (typeof any === 'function' && !stack.length) return invoke(any)
+    if (typeof any === 'function' && !stack.length)
+      return invoke(any, !any.name || any.name.startsWith('_') ? '$root' : any.name)
     if (typeof any === 'object') {
       mutate(any)
       return $.$yield ? invoke($.$yield) : shift()
