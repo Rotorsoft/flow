@@ -6,7 +6,7 @@
 module.exports = ({ actions, params = {}, reducer, invoked, shifted }) => {
   if (typeof actions !== 'object') throw Error('actions must be an object')
   if (typeof reducer !== 'function') throw Error('reducer must be a function')
-  const $ = { state: {}, scope: {}, level: 0, yielding: null, stack: [] }
+  const $ = { state: {}, scope: { level: -1 }, yielding: null, stack: [] }
 
   const invoke = (callback, root) => {
     const name = root || callback.name
@@ -14,11 +14,11 @@ module.exports = ({ actions, params = {}, reducer, invoked, shifted }) => {
       $.yielding = callback
       return $
     }
-    $.yielding = null
+    delete $.yielding
 
     if (name) {
       const recur = $.scope.name === name ? $.scope.recur + 1 : 0
-      $.scope = { name, recur, parent: { ...$.scope }, level: $.level++, depth: $.stack.length }
+      $.scope = { name, recur, parent: { ...$.scope }, level: $.scope.level + 1, depth: $.stack.length }
       $.stack.unshift(name)
     }
 
@@ -36,10 +36,7 @@ module.exports = ({ actions, params = {}, reducer, invoked, shifted }) => {
     $.done = !$.stack.length
     if (!any) return $
 
-    if (typeof any === 'string') {
-      $.level--
-      $.scope = $.scope.parent
-    }
+    if (typeof any === 'string') $.scope = $.scope.parent
     return next(any)
   }
 

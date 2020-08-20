@@ -44,7 +44,6 @@ flow = {
     level: 'int', // indentation level
     depth: 'int' // stack depth
   },
-  level: 'int', // current indentation level
   yielding: 'function' // yielding action
   stack: [] // current stack
   done: 'bool', // true when end of stack reached
@@ -121,8 +120,6 @@ The provided tests are self explanatory and should log a trace like this:
     authenticated: true
   },
   scope: {},
-  level: 0,
-  yielding: null,
   stack: [],
   done: true
 }
