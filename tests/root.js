@@ -1,7 +1,8 @@
-const root = ({ $actions, name }) => {
+const root = (state, scope, { params, actions }) => {
+  const { name } = params
   return [
-    $actions.authenticate,
-    function _({ authenticate, verifyPhone, canComeToThePhone }) {
+    actions.authenticate,
+    function next({ authenticate, verifyPhone, canComeToThePhone }) {
       const greet = { say: `Hello ${name}. How are you today?`, authenticated: true }
 
       if (authenticate.answer === 'yes') return greet

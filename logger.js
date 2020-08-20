@@ -34,31 +34,24 @@ const toIndent = (depth, level) => {
   return chalk.gray(`[${depth.toString().padStart(2)}] `.concat(' '.repeat(level * 3)))
 }
 
-const invoked = (name = '', value, { $scope, $recur, $depth, $level }) => {
-  if (name && name.startsWith('_')) return
-  const indent = toIndent($depth, $level)
-  const scope = $scope.concat($recur ? `:${$recur}` : '')
+const invoked = (name = '', value, { recur, depth, level }) => {
+  const indent = toIndent(depth, level)
   const array = Array.isArray(value) ? chalk.grey(' // '.concat(toArray(value))) : ''
-  if (name) console.log(chalk.yellow(indent.concat(scope, '() {', array)))
+  if (name) console.log(chalk.yellow(indent.concat(name.concat(recur ? `:${recur}` : ''), '() {', array)))
   else if (array) console.log(chalk.red(indent.concat('   ...', array)))
 }
 
-const shifted = (value, { $scope, $level, $recur, $depth }) => {
-  if (value === 'RETURN') {
-    const indent = toIndent($depth, $level)
-    const scope = $scope.concat($recur ? `:${$recur}` : '')
+const shifted = (value, { name, level, recur, depth }) => {
+  if (typeof value === 'string') {
+    const indent = toIndent(depth, level)
+    const scope = name.concat(recur ? `:${recur}` : '')
     console.log(indent.concat(chalk.yellow.bold('} '), chalk.gray('// '.concat(scope))))
   } else if (value) {
-    const indent = toIndent($depth, $level + 1)
+    const indent = toIndent(depth, level + 1)
     if (typeof value === 'function') {
       if (!value.name) process.stdout.write(indent.concat(toAny(value), chalk.red.bold(' ... '))) // yielding
     } else console.log(indent.concat(toAny(value)))
   }
 }
 
-const mutating = (mutation, hook) => {
-  const msg = chalk.green.underline(JSON.stringify(mutation))
-  hook ? console.log(hook, msg) : console.log(msg)
-}
-
-module.exports = { invoked, shifted, mutating }
+module.exports = { invoked, shifted }
