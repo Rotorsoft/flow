@@ -26,7 +26,7 @@ Borrowing from functional programming, coroutines, and generator functions; this
 
 The flow is initialized with a map of actions, optional parameters, the reducer, and optional callbacks (_invoked_, _shifted_) for tracing and debugging actions. **_The injected action map allows composition without coupling modules_**.
 
-The returned coroutine must be started with a **root action** and can be successively invoked with state payloads following the Observer pattern. It always returns its internal structure including the current state and scope.
+The returned coroutine must be started with a **root action** and can be successively invoked with transition payloads. It always returns its internal structure including the current state and scope.
 
 Actions are internally invoked with 3 arguments: **(state, scope, { params, actions })**.
 
