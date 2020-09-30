@@ -2,24 +2,26 @@
 
 ### A minimalistic functional state machine
 
-This is an attempt to build a functional state machine in less than 100 lines of code without any external dependencies. I welcome reviewers who can contribute to make it more efficient without compromising funcionality.
+This is an attempt to build the simplest functional state machine without any external dependencies. Reviewers who can contribute to make it simpler or more efficient without compromising funcionality are welcome.
 
 Borrowing from functional programming, coroutines, and generator functions; this "coded by convention" loop sets the foundation to compose more complex applications with just three basic constructs:
 
-- **Actions** - Pure functions with logic to drive transitions
+- **Actions** - Pure functions with logic to drive internal transitions
 
-- **Reducer** - Pure function with logic to reduce the state from transitions
+- **Reducer** - Pure function with logic to reduce the state from internal and external transition payloads
 
 - **Flow** - A closure with the coroutine implementing the loop and holding the state
 
+![](Diagram)
+
 ### Conventions
 
-- **Anonymous** actions **yield** the state back to the caller. Think of it as a one-time yielding generator function
+- **Anonymous** actions **yield** control back to the caller (User). Think of it as a one-time yielding generator function.
 
-- **Actions** can optionally return:
+- **Actions** can _optionally_ return:
 
-  - An **Object** - the transition payload
-  - An **Action** - to allow composition
+  - An **Object** - action payload
+  - An **Action** - (named or anonymous) to allow composition
   - An **Array** of the above - to be executed in order
 
 ### The loop
